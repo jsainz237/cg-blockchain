@@ -61,5 +61,6 @@ func (bc *Blockchain) IsValid() bool {
 			return false
 		}
 	}
+
 	return true
 }
