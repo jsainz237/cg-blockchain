@@ -12,12 +12,10 @@ type Blockchain struct {
 	reward      int
 }
 
-func (bc Blockchain) GetChain() []Block {
-	return bc.chain
-}
+var MTGChain Blockchain
 
-func CreateBlockchain() Blockchain {
-	blockchain := Blockchain{
+func init() {
+	MTGChain = Blockchain{
 		blocktiming: 10000,
 		reward:      100,
 		difficulty:  3,
@@ -28,9 +26,11 @@ func CreateBlockchain() Blockchain {
 		Timestamp: time.Now(),
 		Hash:      "000",
 	}
-	blockchain.chain = append(blockchain.chain, genesisBlock)
+	MTGChain.chain = append(MTGChain.chain, genesisBlock)
+}
 
-	return blockchain
+func (bc Blockchain) GetChain() []Block {
+	return bc.chain
 }
 
 func (bc Blockchain) GetLatestBlock() Block {

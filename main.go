@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	bc "mtgbc/blockchain"
 	server "mtgbc/server"
 	"os"
 
@@ -17,16 +16,10 @@ func init() {
 }
 
 func main() {
-	blockchain := bc.CreateBlockchain()
 	port, portExists := os.LookupEnv("PORT")
-
 	if !portExists {
 		port = "4000"
 	}
 
-	serverContext := server.ServerContext{
-		Blockchain: &blockchain,
-	}
-
-	server.StartNode(&serverContext, ":"+port)
+	server.StartNode(":" + port)
 }

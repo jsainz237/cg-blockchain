@@ -3,6 +3,7 @@ package blockchain
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -32,4 +33,16 @@ func (b *Block) mineBlock(difficulty int) Block {
 	}
 
 	return *b
+}
+
+// In an actual application, I'd use a read-only database to store the blocks
+// and transactions, but for timesake just reading through blockchain iteratively
+func (bc *Blockchain) GetBlock(blockHash string) (Block, error) {
+	for _, block := range bc.chain {
+		if block.Hash == blockHash {
+			return block, nil
+		}
+	}
+
+	return Block{}, errors.New("Block not found")
 }
