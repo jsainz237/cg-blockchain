@@ -2,6 +2,9 @@ package server
 
 import (
 	"net/http"
+	"os"
+
+	_ "mtgbc/env"
 
 	"github.com/labstack/echo/v4"
 )
@@ -13,9 +16,11 @@ func init() {
 	Router.HideBanner = true
 }
 
-func StartNode(port string) {
+func StartNode() {
+	port := os.Getenv("PORT")
+
 	initRoutes()
-	Router.Logger.Fatal(Router.Start(port))
+	Router.Logger.Fatal(Router.Start(":" + port))
 }
 
 func initRoutes() {
