@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	server "mtgbc/server"
+	api "mtgbc/api"
+	network "mtgbc/network"
 )
 
 func main() {
-	fmt.Println("Network Address: ", server.MTGNetwork.Address)
-	server.StartNode()
+	fmt.Println("Network Address: ", network.MTGNetwork.Address)
+	api.Startserver()
 }

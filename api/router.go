@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"net/http"
@@ -16,7 +16,7 @@ func init() {
 	Router.HideBanner = true
 }
 
-func StartNode() {
+func Startserver() {
 	port := os.Getenv("PORT")
 
 	initRoutes()
