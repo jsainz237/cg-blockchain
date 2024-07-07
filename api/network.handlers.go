@@ -34,10 +34,23 @@ var connectHandler = func(c echo.Context) error {
 
 	// Register node on all other nodes in the network
 	for _, connection := range network.MTGNetwork.ConnectionPool {
-		_, err := http.Post(connection+"/register", "application/json", bytes.NewBuffer(reqBody))
-		if err == nil {
-			log.Fatalf("Could not register node on %s", connection)
+		_, err := http.Post("http://"+connection+"/node/register", "application/json", bytes.NewBuffer(reqBody))
+		if err != nil {
+			log.Printf("[Error] Could not register node on %s: %s", connection, err.Error())
 		}
+	}
+
+	allUrls := append(network.MTGNetwork.ConnectionPool[:], network.MTGNetwork.Address)
+	log.Printf("[Info] All URLs: %v", allUrls)
+	reqBody, _ = json.Marshal(map[string]interface{}{
+		"nodeUrls": allUrls,
+	})
+
+	// Register all other nodes on the new node
+	_, err := http.Post("http://"+nodeUrl+"/node/register-bulk", "application/json", bytes.NewBuffer(reqBody))
+	if err != nil {
+		log.Printf("[Error] Could not register all nodes on %s: %s", nodeUrl, err.Error())
+		return c.JSON(http.StatusInternalServerError, "Internal server error")
 	}
 
 	// Add node to the current network
@@ -54,8 +67,30 @@ var registerHandler = func(c echo.Context) error {
 
 	nodeUrl := connectHandlerRequest.NodeUrl
 
+	log.Printf("[Info] Registering node %s", nodeUrl)
 	network.MTGNetwork.AddConnection(nodeUrl)
 	return c.JSON(http.StatusCreated, "Node registered on network")
+}
+
+type RegisterBulkHandlerRequest struct {
+	NodeUrls []string `json:"nodeUrls"`
+}
+
+var registerBulkHandler = func(c echo.Context) error {
+	registerBulkRequest := new(RegisterBulkHandlerRequest)
+	if err := c.Bind(registerBulkRequest); err != nil {
+		log.Printf("[Error] Could not bind nodeUrl: %s", err)
+		return c.JSON(http.StatusInternalServerError, "Internal server error")
+	}
+
+	nodeUrls := registerBulkRequest.NodeUrls
+
+	for _, nodeUrl := range nodeUrls {
+		log.Printf("[Info] Registering node %s via bulk", nodeUrl)
+		network.MTGNetwork.AddConnection(nodeUrl)
+	}
+
+	return c.JSON(http.StatusCreated, "All nodes registered on network")
 }
 
 var getConnectionsHandler = func(c echo.Context) error {
