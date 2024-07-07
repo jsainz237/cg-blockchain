@@ -1,13 +1,14 @@
 package env
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
-var defaults = map[string]interface{}{
+var defaults = map[string]string{
 	"PORT": "4000",
 }
 
@@ -17,9 +18,17 @@ func init() {
 		fmt.Println("No .env file found")
 	}
 
+	// Parse --port command line flag
+	port := flag.String("port", os.Getenv("PORT"), "Port to run the server on")
+	flag.Parse()
+
+	if *port != "" && *port != os.Getenv("PORT") {
+		os.Setenv("PORT", *port)
+	}
+
 	for key, value := range defaults {
 		if _, exists := os.LookupEnv(key); !exists {
-			os.Setenv(key, value.(string))
+			os.Setenv(key, value)
 		}
 	}
 }
