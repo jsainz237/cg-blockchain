@@ -5,8 +5,8 @@ import (
 )
 
 type Blockchain struct {
-	chain       []Block
-	pendingData []interface{}
+	Chain       []Block
+	PendingData []interface{}
 	difficulty  int
 	blocktiming int
 	reward      int
@@ -26,36 +26,32 @@ func init() {
 		Timestamp: time.Now(),
 		Hash:      "000",
 	}
-	MTGChain.chain = append(MTGChain.chain, genesisBlock)
-}
-
-func (bc Blockchain) GetChain() []Block {
-	return bc.chain
+	MTGChain.Chain = append(MTGChain.Chain, genesisBlock)
 }
 
 func (bc Blockchain) GetLatestBlock() Block {
-	return bc.chain[len(bc.chain)-1]
+	return bc.Chain[len(bc.Chain)-1]
 }
 
 func (bc *Blockchain) CreateBlock() {
 	block := Block{
-		Data:         bc.pendingData,
+		Data:         bc.PendingData,
 		Timestamp:    time.Now(),
 		PreviousHash: bc.GetLatestBlock().Hash,
 	}
 
 	block.mineBlock(bc.difficulty)
-	bc.chain = append(bc.chain, block)
-	bc.pendingData = []interface{}{}
+	bc.Chain = append(bc.Chain, block)
+	bc.PendingData = []interface{}{}
 }
 
-func (bc *Blockchain) IsValid() bool {
+func IsValid(chain []Block) bool {
 	// For each block in the chain, check if the hash is valid
 	// and the link between blocks is correct
 
-	for i := range bc.chain[1:] {
-		currBlock := bc.chain[i]
-		prevBlock := bc.chain[i-1]
+	for i := range chain[1:] {
+		currBlock := chain[i]
+		prevBlock := chain[i-1]
 
 		if currBlock.Hash != currBlock.calculateHash() || currBlock.PreviousHash != prevBlock.Hash {
 			return false

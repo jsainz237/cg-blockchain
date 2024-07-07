@@ -43,15 +43,15 @@ func (t Transaction) CalculateWinner() (string, bool, Card) {
 }
 
 func (bc *Blockchain) AddTransaction(t Transaction) int {
-	bc.pendingData = append(bc.pendingData, t)
-	return len(bc.pendingData)
+	bc.PendingData = append(bc.PendingData, t)
+	return len(bc.PendingData)
 }
 
 // In an actual application, I'd use a read-only database to store the blocks
 // and transactions, but for timesake just reading through blockchain iteratively
 func (bc *Blockchain) GetTransaction(txId string) (Transaction, error) {
 	// search pending transactions first
-	for _, data := range bc.pendingData {
+	for _, data := range bc.PendingData {
 		tx := data.(Transaction)
 		if tx.Id == txId {
 			return tx, nil
@@ -59,7 +59,7 @@ func (bc *Blockchain) GetTransaction(txId string) (Transaction, error) {
 	}
 
 	// search blockchain transactions
-	for _, block := range bc.chain {
+	for _, block := range bc.Chain {
 		for _, data := range block.Data {
 			tx := data.(Transaction)
 			if tx.Id == txId {

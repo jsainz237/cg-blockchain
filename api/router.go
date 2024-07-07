@@ -39,4 +39,5 @@ func initRoutes() {
 	Router.POST("/node/register", registerHandler)
 	Router.POST("/node/register-bulk", registerBulkHandler)
 	Router.GET("/node/connections", getConnectionsHandler)
+	Router.GET("/node/consensus", consensusHandler)
 }
