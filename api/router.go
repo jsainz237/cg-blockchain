@@ -34,4 +34,8 @@ func initRoutes() {
 	Router.POST("/transaction", addTransactionHandler)
 	Router.GET("/transaction/:transactionId", getTransactionHandler)
 	Router.GET("/transaction/:transactionId/winner", getWinnerHandler)
+
+	Router.POST("/node/connect", connectHandler)
+	Router.POST("/node/register", registerHandler)
+	Router.GET("/node/connections", getConnectionsHandler)
 }

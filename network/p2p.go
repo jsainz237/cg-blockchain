@@ -11,7 +11,7 @@ import (
 
 type Network struct {
 	Address        string
-	ConnectionPool []Network
+	ConnectionPool []string
 }
 
 var MTGNetwork Network
@@ -43,18 +43,16 @@ func getOutboundIP() (string, error) {
 }
 
 func (n *Network) AddConnection(address string) int {
-	n.ConnectionPool = append(n.ConnectionPool, Network{Address: address})
+	n.ConnectionPool = append(n.ConnectionPool, address)
 	return len(n.ConnectionPool)
 }
 
 func (n *Network) RemoveConnection(address string) int {
 	for i, connection := range n.ConnectionPool {
-		if connection.Address == address {
+		if connection == address {
 			n.ConnectionPool = append(n.ConnectionPool[:i], n.ConnectionPool[i+1:]...)
 		}
 	}
 
 	return len(n.ConnectionPool)
 }
-
-// func Sync()
