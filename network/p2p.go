@@ -22,7 +22,7 @@ func init() {
 		panic("Could not calculate IP address")
 	}
 
-	MTGNetwork = Network{Address: ip}
+	MTGNetwork = Network{Address: os.Getenv("PROTOCOL") + "://" + ip}
 }
 
 /* Method inspired from https://stackoverflow.com/questions/75268039/how-to-use-golang-to-get-my-wifi-ip-address */

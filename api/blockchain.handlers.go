@@ -23,7 +23,7 @@ var consensusHandler = func(c echo.Context) error {
 
 	// Get the blockchain from all connected nodes
 	for _, node := range network.MTGNetwork.ConnectionPool {
-		resp, _ := http.Get("http://" + node + "/blockchain")
+		resp, _ := http.Get(node + "/blockchain")
 		body, _ := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 

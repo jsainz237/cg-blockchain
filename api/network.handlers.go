@@ -34,7 +34,7 @@ var connectHandler = func(c echo.Context) error {
 
 	// Register node on all other nodes in the network
 	for _, connection := range network.MTGNetwork.ConnectionPool {
-		_, err := http.Post("http://"+connection+"/node/register", "application/json", bytes.NewBuffer(reqBody))
+		_, err := http.Post(connection+"/node/register", "application/json", bytes.NewBuffer(reqBody))
 		if err != nil {
 			log.Printf("[Error] Could not register node on %s: %s", connection, err.Error())
 		}
@@ -47,7 +47,7 @@ var connectHandler = func(c echo.Context) error {
 	})
 
 	// Register all other nodes on the new node
-	_, err := http.Post("http://"+nodeUrl+"/node/register-bulk", "application/json", bytes.NewBuffer(reqBody))
+	_, err := http.Post(nodeUrl+"/node/register-bulk", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		log.Printf("[Error] Could not register all nodes on %s: %s", nodeUrl, err.Error())
 		return c.JSON(http.StatusInternalServerError, "Internal server error")

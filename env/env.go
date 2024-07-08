@@ -9,7 +9,8 @@ import (
 )
 
 var defaults = map[string]string{
-	"PORT": "4000",
+	"PORT":     "4000",
+	"PROTOCOL": "http",
 }
 
 func init() {
