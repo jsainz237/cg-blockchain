@@ -28,10 +28,11 @@ func initRoutes() {
 		return c.String(http.StatusOK, "OK")
 	})
 
-	Router.GET("/blockchain/chain", getBlockchainHandler)
+	Router.GET("/blockchain", getBlockchainHandler)
 	Router.GET("/blockchain/latest", getLatestBlockHandler)
 
 	Router.POST("/transaction", addTransactionHandler)
+	Router.POST("/transaction/sync", syncTransactionHandler)
 	Router.GET("/transaction/:transactionId", getTransactionHandler)
 	Router.GET("/transaction/:transactionId/winner", getWinnerHandler)
 

@@ -1,7 +1,10 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
 	bc "mtgbc/blockchain"
+	network "mtgbc/network"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -22,7 +25,27 @@ var addTransactionHandler = func(c echo.Context) error {
 	}
 
 	numPending := bc.MTGChain.AddTransaction(*tx)
-	return c.JSON(http.StatusOK, AddTransactionResponse{numPending, *tx})
+
+	for _, node := range network.MTGNetwork.ConnectionPool {
+		reqBody, _ := json.Marshal(tx)
+		_, err := http.Post(node+"/transaction/sync", "application/json", bytes.NewBuffer(reqBody))
+
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "Could not sync transaction")
+		}
+	}
+
+	return c.JSON(http.StatusCreated, AddTransactionResponse{numPending, *tx})
+}
+
+var syncTransactionHandler = func(c echo.Context) error {
+	tx := new(bc.Transaction)
+	if err := c.Bind(tx); err != nil {
+		return c.String(http.StatusBadRequest, "Invalid transaction")
+	}
+
+	bc.MTGChain.AddTransaction(*tx)
+	return c.String(http.StatusCreated, "Synced")
 }
 
 var getTransactionHandler = func(c echo.Context) error {
