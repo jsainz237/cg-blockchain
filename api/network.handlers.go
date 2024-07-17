@@ -5,46 +5,10 @@ import (
 	"log"
 	network "mtgbc/network"
 	"net/http"
-	"net/rpc"
 	"slices"
 )
 
 type NetworkHandlers struct{}
-
-func registerNodeToConnection(connection string, nodeUrl string) (string, error) {
-	var clientReply string
-	client, err := rpc.DialHTTP("tcp", connection)
-
-	if err != nil {
-		return "", err
-	}
-
-	err = client.Call("Network.Register", &ConnectArgs{NodeUrl: nodeUrl}, clientReply)
-
-	if err != nil {
-		return "", err
-	}
-
-	return clientReply, nil
-}
-
-func registerExistingConnectionsToNode(nodeUrl string, allUrls []string) (string, error) {
-	log.Printf("[Info] All URLs: %v", allUrls)
-
-	// Register all other nodes on the new node
-	client, err := rpc.DialHTTP("tcp", nodeUrl)
-	if err != nil {
-		return "", err
-	}
-
-	var clientReply string
-	err = client.Call("Network.RegisterBulk", &RegisterBulkArgs{NodeUrls: allUrls}, clientReply)
-	if err != nil {
-		return "", err
-	}
-
-	return clientReply, nil
-}
 
 type ConnectArgs struct {
 	NodeUrl string `json:"nodeUrl"`
@@ -59,15 +23,14 @@ func (nh *NetworkHandlers) Connect(r *http.Request, args *ConnectArgs, reply *st
 
 	// Register all existing connections on the new node
 	allUrls := append(network.MTGNetwork.ConnectionPool[:], network.MTGNetwork.Address)
-	_, err := registerExistingConnectionsToNode(nodeUrl, allUrls)
-
+	_, _, err := CallRPC(nodeUrl, "Network.RegisterBulk", &RegisterBulkArgs{NodeUrls: allUrls})
 	if err != nil {
 		return fmt.Errorf("[Error] Could not register existing nodes on %s: %s", nodeUrl, err.Error())
 	}
 
 	// Register node on all other nodes in the network
 	for _, connection := range network.MTGNetwork.ConnectionPool {
-		_, err := registerNodeToConnection(connection, nodeUrl)
+		_, _, err := CallRPC(connection, "Network.Register", &ConnectArgs{NodeUrl: nodeUrl})
 		if err != nil {
 			log.Printf("[Error] Could not register node on %s: %s", connection, err.Error())
 			continue
