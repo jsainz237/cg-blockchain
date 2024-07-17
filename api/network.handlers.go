@@ -1,102 +1,115 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
+	"fmt"
 	"log"
 	network "mtgbc/network"
 	"net/http"
+	"net/rpc"
 	"slices"
-
-	"github.com/labstack/echo/v4"
 )
 
-type ConnectHandlerRequest struct {
+type NetworkHandlers struct{}
+
+func registerNodeToConnection(connection string, nodeUrl string) (string, error) {
+	var clientReply string
+	client, err := rpc.DialHTTP("tcp", connection)
+
+	if err != nil {
+		return "", err
+	}
+
+	err = client.Call("Network.Register", &ConnectArgs{NodeUrl: nodeUrl}, clientReply)
+
+	if err != nil {
+		return "", err
+	}
+
+	return clientReply, nil
+}
+
+func registerExistingConnectionsToNode(nodeUrl string, allUrls []string) (string, error) {
+	log.Printf("[Info] All URLs: %v", allUrls)
+
+	// Register all other nodes on the new node
+	client, err := rpc.DialHTTP("tcp", nodeUrl)
+	if err != nil {
+		return "", err
+	}
+
+	var clientReply string
+	err = client.Call("Network.RegisterBulk", &RegisterBulkArgs{NodeUrls: allUrls}, clientReply)
+	if err != nil {
+		return "", err
+	}
+
+	return clientReply, nil
+}
+
+type ConnectArgs struct {
 	NodeUrl string `json:"nodeUrl"`
 }
 
-var connectHandler = func(c echo.Context) error {
-	connectHandlerRequest := new(ConnectHandlerRequest)
-	if err := c.Bind(connectHandlerRequest); err != nil {
-		log.Printf("[Error] Could not bind nodeUrl: %s", err)
-		return c.JSON(http.StatusInternalServerError, "Internal server error")
-	}
-
-	nodeUrl := connectHandlerRequest.NodeUrl
+func (nh *NetworkHandlers) Connect(r *http.Request, args *ConnectArgs, reply *string) error {
+	nodeUrl := args.NodeUrl
 
 	if slices.Contains(network.MTGNetwork.ConnectionPool, nodeUrl) {
-		return c.JSON(http.StatusBadRequest, "Node already connected")
+		return fmt.Errorf("node already connected")
 	}
 
-	reqBody, _ := json.Marshal(map[string]string{
-		"nodeUrl": nodeUrl,
-	})
+	// Register all existing connections on the new node
+	allUrls := append(network.MTGNetwork.ConnectionPool[:], network.MTGNetwork.Address)
+	_, err := registerExistingConnectionsToNode(nodeUrl, allUrls)
+
+	if err != nil {
+		return fmt.Errorf("[Error] Could not register existing nodes on %s: %s", nodeUrl, err.Error())
+	}
 
 	// Register node on all other nodes in the network
 	for _, connection := range network.MTGNetwork.ConnectionPool {
-		_, err := http.Post(connection+"/node/register", "application/json", bytes.NewBuffer(reqBody))
+		_, err := registerNodeToConnection(connection, nodeUrl)
 		if err != nil {
 			log.Printf("[Error] Could not register node on %s: %s", connection, err.Error())
+			continue
 		}
-	}
-
-	allUrls := append(network.MTGNetwork.ConnectionPool[:], network.MTGNetwork.Address)
-	log.Printf("[Info] All URLs: %v", allUrls)
-	reqBody, _ = json.Marshal(map[string]interface{}{
-		"nodeUrls": allUrls,
-	})
-
-	// Register all other nodes on the new node
-	_, err := http.Post(nodeUrl+"/node/register-bulk", "application/json", bytes.NewBuffer(reqBody))
-	if err != nil {
-		log.Printf("[Error] Could not register all nodes on %s: %s", nodeUrl, err.Error())
-		return c.JSON(http.StatusInternalServerError, "Internal server error")
 	}
 
 	// Add node to the current network
 	network.MTGNetwork.AddConnection(nodeUrl)
-	return c.JSON(http.StatusCreated, "Node connected to network")
+	return nil
 }
 
-var registerHandler = func(c echo.Context) error {
-	connectHandlerRequest := new(ConnectHandlerRequest)
-	if err := c.Bind(connectHandlerRequest); err != nil {
-		log.Printf("[Error] Could not bind nodeUrl: %s", err)
-		return c.JSON(http.StatusInternalServerError, "Internal server error")
-	}
-
-	nodeUrl := connectHandlerRequest.NodeUrl
+func (nh *NetworkHandlers) Register(r *http.Request, args *ConnectArgs, reply *string) error {
+	nodeUrl := args.NodeUrl
 
 	log.Printf("[Info] Registering node %s", nodeUrl)
 	network.MTGNetwork.AddConnection(nodeUrl)
-	return c.JSON(http.StatusCreated, "Node registered on network")
+	*reply = "Node registered on network"
+	return nil
 }
 
-type RegisterBulkHandlerRequest struct {
+type RegisterBulkArgs struct {
 	NodeUrls []string `json:"nodeUrls"`
 }
 
-var registerBulkHandler = func(c echo.Context) error {
-	registerBulkRequest := new(RegisterBulkHandlerRequest)
-	if err := c.Bind(registerBulkRequest); err != nil {
-		log.Printf("[Error] Could not bind nodeUrl: %s", err)
-		return c.JSON(http.StatusInternalServerError, "Internal server error")
-	}
-
-	nodeUrls := registerBulkRequest.NodeUrls
+func (nh *NetworkHandlers) RegisterBulk(r *http.Request, args *RegisterBulkArgs, reply *string) error {
+	nodeUrls := args.NodeUrls
 
 	for _, nodeUrl := range nodeUrls {
 		log.Printf("[Info] Registering node %s via bulk", nodeUrl)
 		network.MTGNetwork.AddConnection(nodeUrl)
 	}
 
-	return c.JSON(http.StatusCreated, "All nodes registered on network")
+	*reply = "All nodes registered on network"
+	return nil
 }
 
-var getConnectionsHandler = func(c echo.Context) error {
+func (nh *NetworkHandlers) GetConnection(r *http.Request, args *struct{}, reply *[]string) error {
 	if len(network.MTGNetwork.ConnectionPool) == 0 {
-		return c.JSON(http.StatusOK, []string{})
+		*reply = []string{}
+		return nil
 	}
 
-	return c.JSON(http.StatusOK, network.MTGNetwork.ConnectionPool)
+	*reply = network.MTGNetwork.ConnectionPool
+	return nil
 }

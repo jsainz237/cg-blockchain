@@ -6,19 +6,26 @@ import (
 	bc "mtgbc/blockchain"
 	network "mtgbc/network"
 	"net/http"
-
-	"github.com/labstack/echo/v4"
 )
 
-var getBlockchainHandler = func(c echo.Context) error {
-	return c.JSON(http.StatusOK, bc.MTGChain)
+type BlockchainHandlers struct{}
+
+func (bh *BlockchainHandlers) GetBlockchain(r *http.Request, args *struct{}, reply *bc.Blockchain) error {
+	*reply = bc.MTGChain
+	return nil
 }
 
-var getLatestBlockHandler = func(c echo.Context) error {
-	return c.JSON(http.StatusOK, bc.MTGChain.GetLatestBlock())
+func (bh *BlockchainHandlers) GetLatestBlock(r *http.Request, args *struct{}, reply *bc.Block) error {
+	*reply = bc.MTGChain.GetLatestBlock()
+	return nil
 }
 
-var consensusHandler = func(c echo.Context) error {
+type ConsensusResponse struct {
+	Authoritive bool
+	Replaced    bool
+}
+
+func (bh *BlockchainHandlers) Consensus(r *http.Request, args *struct{}, reply *ConsensusResponse) error {
 	var blockchains []bc.Blockchain
 
 	// Get the blockchain from all connected nodes
@@ -38,9 +45,11 @@ var consensusHandler = func(c echo.Context) error {
 			bc.MTGChain.Chain = blockchain.Chain
 			bc.MTGChain.PendingData = blockchain.PendingData
 
-			return c.String(http.StatusOK, "Blockchain replaced")
+			*reply = ConsensusResponse{Authoritive: false, Replaced: true}
+			return nil
 		}
 	}
 
-	return c.String(http.StatusOK, "Blockchain is authoritative")
+	*reply = ConsensusResponse{Authoritive: true, Replaced: false}
+	return nil
 }

@@ -1,44 +1,32 @@
 package api
 
 import (
+	_ "mtgbc/env"
 	"net/http"
 	"os"
 
-	_ "mtgbc/env"
-
-	"github.com/labstack/echo/v4"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/rpc"
+	"github.com/gorilla/rpc/json"
 )
-
-var Router *echo.Echo
-
-func init() {
-	Router = echo.New()
-	Router.HideBanner = true
-}
 
 func Startserver() {
 	port := os.Getenv("PORT")
 
-	initRoutes()
-	Router.Logger.Fatal(Router.Start(":" + port))
+	_, router := initRoutes()
+	http.ListenAndServe(":"+port, router)
 }
 
-func initRoutes() {
-	Router.GET("/health", func(c echo.Context) error {
-		return c.String(http.StatusOK, "OK")
-	})
+func initRoutes() (*rpc.Server, *mux.Router) {
+	server := rpc.NewServer()
+	server.RegisterCodec(json.NewCodec(), "application/json")
+	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
 
-	Router.GET("/blockchain", getBlockchainHandler)
-	Router.GET("/blockchain/latest", getLatestBlockHandler)
+	blockchainHandlers := new(BlockchainHandlers)
+	server.RegisterService(blockchainHandlers, "Blockchain")
 
-	Router.POST("/transaction", addTransactionHandler)
-	Router.POST("/transaction/sync", syncTransactionHandler)
-	Router.GET("/transaction/:transactionId", getTransactionHandler)
-	Router.GET("/transaction/:transactionId/winner", getWinnerHandler)
+	router := mux.NewRouter()
+	router.Handle("/rpc", server)
 
-	Router.POST("/node/connect", connectHandler)
-	Router.POST("/node/register", registerHandler)
-	Router.POST("/node/register-bulk", registerBulkHandler)
-	Router.GET("/node/connections", getConnectionsHandler)
-	Router.GET("/node/consensus", consensusHandler)
+	return server, router
 }
