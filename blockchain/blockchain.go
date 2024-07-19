@@ -6,7 +6,7 @@ import (
 
 type Blockchain struct {
 	Chain       []Block
-	PendingData []interface{}
+	PendingData []Transaction
 	difficulty  int
 	blocktiming int
 	reward      int
@@ -16,6 +16,7 @@ var MTGChain Blockchain
 
 func init() {
 	MTGChain = Blockchain{
+		PendingData: []Transaction{},
 		blocktiming: 10000,
 		reward:      100,
 		difficulty:  3,
@@ -42,7 +43,7 @@ func (bc *Blockchain) CreateBlock() {
 
 	block.mineBlock(bc.difficulty)
 	bc.Chain = append(bc.Chain, block)
-	bc.PendingData = []interface{}{}
+	bc.PendingData = []Transaction{}
 }
 
 func IsValid(chain []Block) bool {

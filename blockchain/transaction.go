@@ -51,8 +51,7 @@ func (bc *Blockchain) AddTransaction(t Transaction) int {
 // and transactions, but for timesake just reading through blockchain iteratively
 func (bc *Blockchain) GetTransaction(txId string) (Transaction, error) {
 	// search pending transactions first
-	for _, data := range bc.PendingData {
-		tx := data.(Transaction)
+	for _, tx := range bc.PendingData {
 		if tx.Id == txId {
 			return tx, nil
 		}
@@ -60,8 +59,7 @@ func (bc *Blockchain) GetTransaction(txId string) (Transaction, error) {
 
 	// search blockchain transactions
 	for _, block := range bc.Chain {
-		for _, data := range block.Data {
-			tx := data.(Transaction)
+		for _, tx := range block.Data {
 			if tx.Id == txId {
 				return tx, nil
 			}

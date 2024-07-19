@@ -28,15 +28,14 @@ func (th *TransactionHandlers) Add(
 	tx := args.Transaction
 	tx.Id = uuid.New().String()
 
-	numPending := bc.MTGChain.AddTransaction(tx)
-
 	for _, node := range network.MTGNetwork.ConnectionPool {
-		_, _, err := CallRPC(node, "Transaction.Sync", &AddTransactionArgs{Transaction: tx})
+		_, _, err := CallRPC(node, "Transactions.Sync", &AddTransactionArgs{Transaction: tx})
 		if err != nil {
 			return fmt.Errorf("could not sync transaction")
 		}
 	}
 
+	numPending := bc.MTGChain.AddTransaction(tx)
 	*reply = AddTransactionResponse{numPending, tx}
 	return nil
 }
@@ -72,5 +71,14 @@ func (th *TransactionHandlers) Winner(
 
 	winner, tie, winningCard := tx.CalculateWinner()
 	*reply = WinnerResponse{winner, tie, winningCard}
+	return nil
+}
+
+func (th *TransactionHandlers) Pending(
+	r *http.Request,
+	args *struct{},
+	reply *[]bc.Transaction,
+) error {
+	*reply = bc.MTGChain.PendingData
 	return nil
 }

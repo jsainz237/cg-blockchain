@@ -11,7 +11,7 @@ import (
 )
 
 type Block struct {
-	Data         []interface{}
+	Data         []Transaction
 	Hash         string
 	PreviousHash string
 	Timestamp    time.Time

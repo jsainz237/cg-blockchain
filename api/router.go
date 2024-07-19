@@ -25,6 +25,12 @@ func initRoutes() (*rpc.Server, *mux.Router) {
 	blockchainHandlers := new(BlockchainHandlers)
 	server.RegisterService(blockchainHandlers, "Blockchain")
 
+	transactionHandlers := new(TransactionHandlers)
+	server.RegisterService(transactionHandlers, "Transactions")
+
+	networkHandlers := new(NetworkHandlers)
+	server.RegisterService(networkHandlers, "Network")
+
 	router := mux.NewRouter()
 	router.Handle("/rpc", server)
 
