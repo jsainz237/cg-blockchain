@@ -10,7 +10,12 @@ import (
 
 type NetworkHandlers struct{}
 
-func (nh *NetworkHandlers) Connect(r *http.Request, args *string, reply *string) error {
+func (nh *NetworkHandlers) Ping(r *http.Request, args *struct{}, reply *string) error {
+	*reply = "OK"
+	return nil
+}
+
+func (nh *NetworkHandlers) ConnectPeer(r *http.Request, args *string, reply *string) error {
 	nodeUrl := *args
 
 	if slices.Contains(network.MTGNetwork.ConnectionPool, nodeUrl) {

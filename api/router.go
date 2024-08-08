@@ -32,7 +32,10 @@ func initRoutes() (*rpc.Server, *mux.Router) {
 	server.RegisterService(networkHandlers, "Network")
 
 	router := mux.NewRouter()
-	router.Handle("/rpc", server)
+	router.Use(corsMiddleware)
+	router.Use(mux.CORSMethodMiddleware(router))
+
+	router.Handle("/rpc", server).Methods("POST", "OPTIONS")
 
 	return server, router
 }
